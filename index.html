@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="ru">
 <head>
+<!-- Google Analytics 4: Pokovru -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X3R7C139HG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-X3R7C139HG');
+</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>По ковру — мини-игра</title>
@@ -214,6 +222,11 @@
   let activeId = null;
   let lastPoint = null;
   let lastScreen = null;
+  let drawingStartedForCarpet = false;
+  function trackGameEvent(name, params = {}) {
+    if (typeof window.gtag === 'function') window.gtag('event', name, params);
+  }
+
 
   function keepPanInBounds() {
     const w = rug.clientWidth, h = rug.clientHeight;
@@ -245,8 +258,9 @@
     if (old.width && old.height) ctx.drawImage(old, 0, 0, old.width, old.height, 0, 0, rect.width, rect.height);
     transform();
   }
-  function clearTrace() { ctx.clearRect(0, 0, trace.width / dpr, trace.height / dpr); }
+  function clearTrace() { ctx.clearRect(0, 0, trace.width / dpr, trace.height / dpr); drawingStartedForCarpet = false; }
   function setMode(mode) {
+    const previousMode = state.mode;
     state.mode = mode;
     activeId = null;
     drawModeBtn.classList.toggle('active', mode === 'draw');
@@ -254,6 +268,7 @@
     drawModeBtn.setAttribute('aria-pressed', String(mode === 'draw'));
     moveModeBtn.setAttribute('aria-pressed', String(mode === 'move'));
     rug.style.cursor = mode === 'move' ? 'grab' : 'crosshair';
+    if (mode !== previousMode) trackGameEvent('game_mode_changed', { mode });
     fullscreenDrawTools.classList.toggle('active', mode === 'draw');
     fullscreenMoveTools.classList.toggle('active', mode === 'move');
   }
@@ -276,11 +291,13 @@
     ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
   }
   function renderCarpet(id) {
+    const previousCarpetId = carpetSelect.value;
     const carpet = carpets.find(c => c.id === id) || carpets[0];
     image.src = carpet.src;
     image.alt = carpet.title;
     carpetSelect.value = carpet.id;
     clearTrace(); resetView();
+    if (previousCarpetId && previousCarpetId !== carpet.id) trackGameEvent('carpet_selected', { carpet_id: carpet.id, carpet_name: carpet.title });
     carpetList.querySelectorAll('.preset').forEach(card => {
       card.classList.toggle('active', card.dataset.id === carpet.id);
       card.setAttribute('aria-pressed', String(card.dataset.id === carpet.id));
@@ -307,6 +324,7 @@
     gameArea.classList.toggle('expanded', expanded);
     document.body.classList.toggle('fullscreen-open', expanded);
     fullscreenBtn.textContent = expanded ? 'Свернуть' : 'На весь экран';
+    trackGameEvent('fullscreen_toggled', { expanded });
     requestAnimationFrame(resizeCanvas);
   }
   function updateWidth(value) {
@@ -317,10 +335,15 @@
   }
   widthInput.addEventListener('input', () => updateWidth(widthInput.value));
   fullWidth.addEventListener('input', () => updateWidth(fullWidth.value));
+  widthInput.addEventListener('change', () => trackGameEvent('line_width_changed', { width_px: Number(widthInput.value) }));
+  fullWidth.addEventListener('change', () => trackGameEvent('line_width_changed', { width_px: Number(fullWidth.value) }));
   colorInput.addEventListener('input', () => { fullColor.value = colorInput.value; });
   fullColor.addEventListener('input', () => { colorInput.value = fullColor.value; });
-  document.getElementById('fullClear').addEventListener('click', clearTrace);
-  document.getElementById('fullReset').addEventListener('click', resetView);
+  colorInput.addEventListener('change', () => trackGameEvent('drawing_color_changed'));
+  fullColor.addEventListener('change', () => trackGameEvent('drawing_color_changed'));
+  function clearDrawing() { clearTrace(); trackGameEvent('drawing_cleared'); }
+  document.getElementById('fullClear').addEventListener('click', clearDrawing);
+  document.getElementById('fullReset').addEventListener('click', () => { resetView(); trackGameEvent('view_reset'); });
   drawModeBtn.addEventListener('click', () => setMode('draw'));
   moveModeBtn.addEventListener('click', () => setMode('move'));
   function updateZoom(value) {
@@ -328,14 +351,16 @@
     transform();
   }
   zoomRange.addEventListener('input', () => updateZoom(zoomRange.value));
+  zoomRange.addEventListener('change', () => trackGameEvent('zoom_changed', { zoom_percent: Number(zoomRange.value) }));
   fullZoom.addEventListener('input', () => updateZoom(fullZoom.value));
-  resetViewBtn.addEventListener('click', resetView);
+  fullZoom.addEventListener('change', () => trackGameEvent('zoom_changed', { zoom_percent: Number(fullZoom.value) }));
+  resetViewBtn.addEventListener('click', () => { resetView(); trackGameEvent('view_reset'); });
   fullscreenBtn.addEventListener('click', toggleFullscreen);
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && gameArea.classList.contains('expanded')) toggleFullscreen();
   });
   carpetSelect.addEventListener('change', e => renderCarpet(e.target.value));
-  document.getElementById('clear').addEventListener('click', clearTrace);
+  document.getElementById('clear').addEventListener('click', clearDrawing);
 
   rug.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -348,6 +373,11 @@
       lastScreen = { x: e.clientX, y: e.clientY };
     } else {
       lastPoint = localPoint(e.clientX, e.clientY);
+      if (!drawingStartedForCarpet) {
+        drawingStartedForCarpet = true;
+        const carpet = carpets.find(c => c.id === carpetSelect.value);
+        trackGameEvent('drawing_started', { carpet_id: carpetSelect.value, carpet_name: carpet ? carpet.title : '' });
+      }
       drawDot(lastPoint);
     }
   });
