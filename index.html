@@ -120,6 +120,10 @@
   .preset strong { display:block; font-size:13px; font-weight:700; margin:0 4px 3px; }
   .preset span { display:block; font-size:11px; line-height:1.45; color:#847874; margin:0 4px; }
   .hint { margin:17px 0 0; text-align:center; color:#8c807b; font-size:12px; }
+  .play-instruction { margin:0 0 17px; text-align:center; color:#8c807b; font-size:12px; line-height:1.6; }
+  .about-game { margin:30px auto 0; max-width:800px; text-align:center; }
+  .about-game h2 { margin:0 0 11px; font-size:18px; font-weight:700; letter-spacing:-.02em; }
+  .about-game p { margin:0; color:#706461; font-size:14px; line-height:1.75; }
 
   @media(max-width:740px) {
     main{padding:22px 12px 42px;}
@@ -156,6 +160,8 @@
     <h1>По ковру</h1>
     <p class="lead">Помнишь, как мы водили пальцем по узорам ковра? Выбирай дорожку и следуй по орнаменту, не сходя с линии. Или придумай свои правила — здесь нет проигравших.</p>
   </header>
+
+  <p class="play-instruction">Зажми кнопку мыши или коснись экрана и веди по узору. При смене ковра след очищается.</p>
 
   <section class="game-area" aria-label="Игра по ковру">
     <div class="rug" id="rug">
@@ -209,7 +215,10 @@
 
   <div class="choose-heading"><h2>Выбери ковёр</h2><span id="carpetCount"></span></div>
   <div class="carpet-list" id="carpetList" aria-label="Варианты ковров"></div>
-  <p class="hint">Зажми кнопку мыши или коснись экрана и веди по узору. При смене ковра след очищается.</p>
+  <section class="about-game" aria-labelledby="about-game-title">
+    <h2 id="about-game-title">Помнишь эту игру из детства?</h2>
+    <p>В детстве мы могли часами водить пальцем по узорам ковра, придумывая запутанные маршруты и лабиринты. Теперь это любимое развлечение из 90-х и 2000-х доступно онлайн! «По ковру» — бесплатная браузерная игра, в которой можно выбирать ковёр с узорами, рисовать дорожки, следовать по орнаменту и придумывать собственные маршруты. Играй прямо в браузере на компьютере или телефоне, без скачивания и регистрации.</p>
+  </section>
 </main>
 
 <script>
